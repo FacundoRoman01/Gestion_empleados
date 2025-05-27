@@ -1,9 +1,9 @@
 package excepciones;
 
-public class EmpleadoException extends RuntimeException {
+public class DaoExeception extends RuntimeException {
 
 	// contructor 1:Es el constructor más común, donde le pasas un mensaje
-	public EmpleadoException(String mensaje) {
+	public DaoExeception(String mensaje) {
 		super(mensaje);
 	}
 
@@ -12,7 +12,7 @@ public class EmpleadoException extends RuntimeException {
 	 SQLException subyacente) dentro de tu EmpleadoException. Esto es útil para la
 	 depuración, ya que puedes saber cuál fue la causa original del problema.
 	 */
-	public EmpleadoException(String mensaje, Throwable causa) {
+	public DaoExeception(String mensaje, Throwable causa) {
 		super(mensaje, causa);
 	}
 }

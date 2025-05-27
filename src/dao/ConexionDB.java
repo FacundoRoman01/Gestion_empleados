@@ -1,6 +1,6 @@
 package dao;
 
-import excepciones.EmpleadoException; // Importamos tu excepción personalizada
+import excepciones.DaoExeception; // Importamos tu excepción personalizada
 import java.io.IOException; // Para manejar errores de I/O (lectura de archivos)
 import java.io.InputStream; // Para leer el archivo de propiedades
 import java.sql.Connection; // La interfaz de JDBC para la conexión
@@ -13,6 +13,8 @@ public class ConexionDB {
 	private static String DB_URL;
 	private static String DB_USERNAME;
 	private static String DB_PASSWORD;
+	
+	
 
 	// 2. Bloque estático: Se ejecuta una única vez cuando la clase se carga en
 	// memoria
@@ -23,7 +25,7 @@ public class ConexionDB {
 
 			if (input == null) {
 				// Si el archivo no se encuentra, lanzamos nuestra EmpleadoException
-				throw new EmpleadoException(
+				throw new DaoExeception(
 						"No se encontró el archivo application.properties. Asegúrate de que esté en src/main/resources/.");
 			}
 			
@@ -37,15 +39,18 @@ public class ConexionDB {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 
 		} catch (IOException e) {
-			throw new EmpleadoException("Error al cargar las propiedades de la base de datos: " + e.getMessage(), e);
+			throw new DaoExeception("Error al cargar las propiedades de la base de datos: " + e.getMessage(), e);
 		} catch (ClassNotFoundException e) {
 			// Si la clase del driver no se encuentra (ej. el JAR no está en el classpath)
-			throw new EmpleadoException(
+			throw new DaoExeception(
 					"No se encontró el driver JDBC de MySQL. Asegúrate de que mysql-connector-java.jar esté en el classpath.",
 					e);
 		}
 
 	}
+	
+	
+	
 
 	// 3. Método para obtener una conexión a la base de datos
 	public static Connection getConnection() throws SQLException {

@@ -7,131 +7,103 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import excepciones.EmpleadoException;
+import excepciones.DaoExeception;
 import modelo.Empleado;
 
-
 public class EmpleadoDAO {
-	 // Método para agregar un nuevo empleado a la base de datos
-    public void agregarEmpleado(Empleado empleado) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try {
-            conn = ConexionDB.getConnection(); // Obtenemos una conexión
-            String sql = "INSERT INTO empleados (nombre, apellido, puesto, salario) VALUES (?, ?, ?, ?)";
-            stmt = conn.prepareStatement(sql); // Preparamos la sentencia SQL
 
+    // Agregar empleado
+    public void agregarEmpleado(Empleado empleado) throws DaoExeception {
+        String sql = "INSERT INTO empleados (nombre, apellido, puesto, salario, idDepartamento) VALUES (?, ?, ?, ?,?)";
+
+        try (
+            Connection conn = ConexionDB.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
             stmt.setString(1, empleado.getNombre());
             stmt.setString(2, empleado.getApellido());
             stmt.setString(3, empleado.getPuesto());
             stmt.setDouble(4, empleado.getSalario());
+            stmt.setInt(5, empleado.getIdDepartamento());
 
-            stmt.executeUpdate(); // Ejecutamos la inserción
+            stmt.executeUpdate();
             System.out.println("Empleado agregado exitosamente: " + empleado.getNombre());
-
         } catch (SQLException e) {
-            // Si hay un error de SQL, lo envolvemos en nuestra EmpleadoException
-            throw new EmpleadoException("Error al agregar empleado: " + e.getMessage(), e);
-        } finally {
-            // Siempre cerramos los recursos para evitar fugas
-            try {
-                if (stmt != null) stmt.close();
-                ConexionDB.closeConnection(conn);
-            } catch (SQLException e) {
-                System.err.println("Error al cerrar recursos: " + e.getMessage());
-            }
+            throw new DaoExeception("Error al agregar empleado: " + e.getMessage(), e);
         }
     }
 
-    // Método para obtener todos los empleados de la base de datos
-    public List<Empleado> obtenerTodosEmpleados() {
+    // Obtener todos los empleados
+    public List<Empleado> obtenerTodosEmpleados() throws DaoExeception {
         List<Empleado> empleados = new ArrayList<>();
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null; // ResultSet para almacenar los resultados de la consulta
+        String sql = "SELECT id, nombre, apellido, puesto, salario, idDepartamento FROM empleados";
 
-        try {
-            conn = ConexionDB.getConnection();
-            String sql = "SELECT id, nombre, apellido, puesto, salario FROM empleados";
-            stmt = conn.prepareStatement(sql);
-            rs = stmt.executeQuery(); // Ejecutamos la consulta y obtenemos los resultados
-
-            while (rs.next()) { // Iteramos sobre cada fila de resultados
+        try (
+            Connection conn = ConexionDB.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql);
+            ResultSet rs = stmt.executeQuery()
+        ) {
+            while (rs.next()) {
                 int id = rs.getInt("id");
                 String nombre = rs.getString("nombre");
                 String apellido = rs.getString("apellido");
                 String puesto = rs.getString("puesto");
                 double salario = rs.getDouble("salario");
+                int idDepartamento = rs.getInt("idDepartamento");
 
-                // Creamos un objeto Empleado con los datos de la fila
-                Empleado empleado = new Empleado(id, nombre, apellido, puesto, salario);
-                empleados.add(empleado); // Lo agregamos a nuestra lista
+                empleados.add(new Empleado(id, nombre, apellido, puesto, salario, idDepartamento));
             }
-
         } catch (SQLException e) {
-            throw new EmpleadoException("Error al obtener todos los empleados: " + e.getMessage(), e);
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                ConexionDB.closeConnection(conn);
-            } catch (SQLException e) {
-                System.err.println("Error al cerrar recursos: " + e.getMessage());
-            }
+            throw new DaoExeception("Error al obtener todos los empleados: " + e.getMessage(), e);
         }
+
         return empleados;
     }
 
-    // Método para obtener un empleado por su ID
-    public Empleado obtenerEmpleadoPorId(int id) {
+    // Obtener empleado por ID
+    public Empleado obtenerEmpleadoPorId(int id) throws DaoExeception {
         Empleado empleado = null;
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
+        String sql = "SELECT id, nombre, apellido, puesto, salario, idDepartamento FROM empleados WHERE id = ?";
 
-        try {
-            conn = ConexionDB.getConnection();
-            String sql = "SELECT id, nombre, apellido, puesto, salario FROM empleados WHERE id = ?";
-            stmt = conn.prepareStatement(sql);
-            stmt.setInt(1, id); // Asignamos el ID al primer placeholder '?'
-            rs = stmt.executeQuery();
+        try (
+            Connection conn = ConexionDB.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
+            stmt.setInt(1, id);
 
-            if (rs.next()) { // Si se encontró una fila con ese ID
-                String nombre = rs.getString("nombre");
-                String apellido = rs.getString("apellido");
-                String puesto = rs.getString("puesto");
-                double salario = rs.getDouble("salario");
-                empleado = new Empleado(id, nombre, apellido, puesto, salario);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    String nombre = rs.getString("nombre");
+                    String apellido = rs.getString("apellido");
+                    String puesto = rs.getString("puesto");
+                    double salario = rs.getDouble("salario");
+                    int idDepartamento = rs.getInt("idDepartamento");
+
+                    empleado = new Empleado(id, nombre, apellido, puesto, salario, idDepartamento);
+                }
             }
-
         } catch (SQLException e) {
-            throw new EmpleadoException("Error al obtener empleado por ID " + id + ": " + e.getMessage(), e);
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (stmt != null) stmt.close();
-                ConexionDB.closeConnection(conn);
-            } catch (SQLException e) {
-                System.err.println("Error al cerrar recursos: " + e.getMessage());
-            }
+            throw new DaoExeception("Error al obtener empleado por ID " + id + ": " + e.getMessage(), e);
         }
+
         return empleado;
     }
 
-    // Método para actualizar un empleado existente
-    public void actualizarEmpleado(Empleado empleado) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try {
-            conn = ConexionDB.getConnection();
-            String sql = "UPDATE empleados SET nombre = ?, apellido = ?, puesto = ?, salario = ? WHERE id = ?";
-            stmt = conn.prepareStatement(sql);
+    // Actualizar empleado
+    public void actualizarEmpleado(Empleado empleado)  throws DaoExeception{
+        String sql = "UPDATE empleados SET nombre = ?, apellido = ?, puesto = ?, salario = ?,  idDepartamento = ?  WHERE id = ?";
 
+        try (
+            Connection conn = ConexionDB.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
             stmt.setString(1, empleado.getNombre());
             stmt.setString(2, empleado.getApellido());
             stmt.setString(3, empleado.getPuesto());
             stmt.setDouble(4, empleado.getSalario());
-            stmt.setInt(5, empleado.getId()); // El ID para el WHERE
+            stmt.setInt(5, empleado.getId());
+            stmt.setInt(6, empleado.getIdDepartamento());
+            
 
             int filasAfectadas = stmt.executeUpdate();
             if (filasAfectadas == 0) {
@@ -139,27 +111,19 @@ public class EmpleadoDAO {
             } else {
                 System.out.println("Empleado actualizado exitosamente: " + empleado.getNombre() + " (ID: " + empleado.getId() + ")");
             }
-
         } catch (SQLException e) {
-            throw new EmpleadoException("Error al actualizar empleado con ID " + empleado.getId() + ": " + e.getMessage(), e);
-        } finally {
-            try {
-                if (stmt != null) stmt.close();
-                ConexionDB.closeConnection(conn);
-            } catch (SQLException e) {
-                System.err.println("Error al cerrar recursos: " + e.getMessage());
-            }
+            throw new DaoExeception("Error al actualizar empleado con ID " + empleado.getId() + ": " + e.getMessage(), e);
         }
     }
 
-    // Método para eliminar un empleado por su ID
-    public void eliminarEmpleado(int id) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        try {
-            conn = ConexionDB.getConnection();
-            String sql = "DELETE FROM empleados WHERE id = ?";
-            stmt = conn.prepareStatement(sql);
+    // Eliminar empleado
+    public void eliminarEmpleado(int id)  throws DaoExeception {
+        String sql = "DELETE FROM empleados WHERE id = ?";
+
+        try (
+            Connection conn = ConexionDB.getConnection();
+            PreparedStatement stmt = conn.prepareStatement(sql)
+        ) {
             stmt.setInt(1, id);
 
             int filasAfectadas = stmt.executeUpdate();
@@ -168,17 +132,8 @@ public class EmpleadoDAO {
             } else {
                 System.out.println("Empleado con ID " + id + " eliminado exitosamente.");
             }
-
         } catch (SQLException e) {
-            throw new EmpleadoException("Error al eliminar empleado con ID " + id + ": " + e.getMessage(), e);
-        } finally {
-            try {
-                if (stmt != null) stmt.close();
-                ConexionDB.closeConnection(conn);
-            } catch (SQLException e) {
-                System.err.println("Error al cerrar recursos: " + e.getMessage());
-            }
+            throw new DaoExeception("Error al eliminar empleado con ID " + id + ": " + e.getMessage(), e);
         }
     }
-
 }
